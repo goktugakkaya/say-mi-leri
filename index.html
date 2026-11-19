@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sayım karşılaştırma</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#f4f7f7;--sf:#fff;--ink:#14232b;--mu:#586971;--ac:#0e5a66;--acf:#fff;--ln:#d6e0e2;--rd:#a8281f;--am:#855500;--gn:#1b6a3a;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e191e;--sf:#15242b;--ink:#e5eef0;--mu:#95a7ad;--ac:#63c4d2;--acf:#06222a;--ln:#27383f;--rd:#ff8b80;--am:#f0b84f;--gn:#6fd49a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e191e;--sf:#15242b;--ink:#e5eef0;--mu:#95a7ad;--ac:#63c4d2;--acf:#06222a;--ln:#27383f;--rd:#ff8b80;--am:#f0b84f;--gn:#6fd49a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--mu);margin:0 0 20px;font-size:.92rem}
+.file{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.file b{display:block}.file small{color:var(--mu);display:block;margin-bottom:8px}
+.file input{width:100%;font:inherit;color:var(--ink)}
+.file .st{display:block;margin-top:6px;font-size:.88rem}
+.ok{color:var(--gn)}.err{color:var(--rd)}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 18px;background:var(--ac);color:var(--acf);cursor:pointer;min-height:44px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.sec{background:transparent;color:var(--ac);border:1.5px solid var(--ac)}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+#res{margin-top:26px}
+.note{background:var(--sf);border-left:4px solid var(--am);padding:10px 12px;border-radius:6px;margin:0 0 12px;font-size:.92rem}
+.info{color:var(--mu);font-size:.9rem;margin:0 0 12px}
+.sum{list-style:none;margin:0 0 16px;padding:0;background:var(--sf);border:1px solid var(--ln);border-radius:10px;overflow:hidden}
+.sum li{border-top:1px solid var(--ln)}.sum li:first-child{border-top:0}
+.sum button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:12px 14px;min-height:48px;cursor:pointer}
+.sum button:focus-visible{outline:3px solid var(--ac);outline-offset:-3px}
+.sum .on{background:color-mix(in srgb,var(--ac) 13%,transparent)}
+.sum .n{font-weight:700;font-variant-numeric:tabular-nums}
+.sum .s{display:block;color:var(--mu);font-size:.82rem}
+.t-rd .n{color:var(--rd)}.t-am .n{color:var(--am)}.t-gn .n{color:var(--gn)}
+.bar{display:flex;gap:8px;margin-bottom:10px}
+.bar input{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink)}
+.wrap{overflow-x:auto;border:1px solid var(--ln);border-radius:10px;background:var(--sf)}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ln);white-space:nowrap}
+td.w{white-space:normal;min-width:180px}
+th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
+.more{color:var(--mu);font-size:.85rem;margin:8px 2px 16px}
+.dl{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}.dl p{flex-basis:100%;margin:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Sayım karşılaştırma</h1>
+<p class="sub">Dosyalar yalnızca bu sayfada, tarayıcında işlenir. Hiçbir yere gönderilmez.</p>
+
+<div class="file"><b>RFID Sayım Sonucu</b><small>“Demirbaş No” sütunu olan Excel dosyası</small><input type="file" id="f1" accept=".xlsx,.xls"><span class="st" id="s1"></span></div>
+<div class="file"><b>KOHA Materyal Listesi</b><small>“BARKOD” sütunu olan tüm materyal dökümü</small><input type="file" id="f2" accept=".xlsx,.xls"><span class="st" id="s2"></span></div>
+<div class="file"><b>Ödünçte Olan Materyaller</b><small>Excel veya CSV. “Barkod/barcode” ve tarih sütunları okunur, kişisel veri okunmaz</small><input type="file" id="f3" accept=".xlsx,.xls,.csv"><span class="st" id="s3"></span></div>
+<button id="go" disabled>Karşılaştır</button>
+
+<section id="res" hidden>
+<p class="note" id="warn" hidden></p>
+<p class="info" id="info"></p>
+<ul class="sum" id="sum"></ul>
+<div class="bar"><input type="search" id="q" placeholder="Barkod veya eser adı ara" aria-label="Ara"></div>
+<div class="wrap"><table id="tb"></table></div>
+<p class="more" id="more"></p>
+<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><p class="info" id="xm" hidden></p></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s),tr=s=>String(s==null?'':s).trim().toLocaleLowerCase('tr');
+const F={};let DL=null,R=null,cur='kayip',SB=null;
+if(window.claude&&claude.use){claude.use('downloads').then(d=>{DL=d}).catch(()=>{})}
+const rd=f=>new Promise((ok,no)=>{const r=new FileReader(),c=/\.csv$/i.test(f.name);r.onload=e=>{try{ok(c?XLSX.read(e.target.result,{type:'string',raw:true}):XLSX.read(e.target.result,{type:'array',cellDates:true}))}catch(x){no(x)}};r.onerror=no;if(c)r.readAsText(f,'utf-8');else r.readAsArrayBuffer(f)});
+['f1','f2','f3'].forEach((id,i)=>$('#'+id).addEventListener('change',async e=>{
+ const f=e.target.files[0],st=$('#s'+(i+1));F[id]=null;st.textContent='';
+ if(f){try{F[id]=await rd(f);st.textContent=f.name+' yüklendi';st.className='st ok'}catch(x){st.textContent='Dosya okunamadı. Excel (.xlsx) dosyası seç.';st.className='st err'}}
+ $('#go').disabled=!(F.f1&&F.f2);
+}));
+function tbl(wb,key){
+ const ws=wb.Sheets[wb.SheetNames[0]];
+ const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+ const h=rows.findIndex(r=>r.some(c=>key.test(tr(c))));
+ if(h<0)throw new Error('Barkod başlığı bulunamadı');
+ const head=rows[h].map(tr);
+ return{rows:rows.slice(h+1),head,ix:re=>head.findIndex(c=>re.test(c))};
+}
+const bc=v=>typeof v==='number'?String(Math.round(v)):(v instanceof Date?'':String(v==null?'':v).trim());
+const dt=v=>{if(v instanceof Date)return isNaN(v)?null:v;if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);if(m){const d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d}}if(typeof v==='string'&&v.trim()){const d=new Date(v.trim().replace(' ','T'));return isNaN(d)?null:d}return null};
+const fd=d=>d?d.toLocaleDateString('tr-TR'):'';
+const g=(r,i)=>i<0?'':(r[i]==null?'':String(r[i]).trim());
+$('#go').addEventListener('click',()=>{try{run()}catch(x){alert('Hata: '+x.message)}});
+function run(){
+ const S=tbl(F.f1,/^(demirbaş no|barkod)$/),K=tbl(F.f2,/^barkod$/);
+ const sb=S.ix(/^(demirbaş no|barkod)$/),sa=S.ix(/eser adı/),sr=S.ix(/raf/);
+ const sayim=new Map();let bos=0,dup=0;
+ for(const r of S.rows){if(r.every(c=>c===''))continue;const b=bc(r[sb]);if(!b){bos++;continue}if(sayim.has(b)){dup++;continue}sayim.set(b,{ad:g(r,sa),raf:g(r,sr)})}
+ const k={b:K.ix(/^barkod$/),ad:K.ix(/eser adı/),yz:K.ix(/yazar/),yn:K.ix(/yer numarası/),mt:K.ix(/^materyal( türü)?$/),yr:K.ix(/^(materyalin )?yeri$/),sx:K.ix(/statü/),od:K.ix(/ödünç verilebilirlik/)};
+ const loan=new Map();
+ if(F.f3){
+  const L=tbl(F.f3,/^(barkod|barcode)$/),lb=L.ix(/^(barkod|barcode)$/);
+  const dc=L.head.map((c,i)=>/ödünç alış|süre bitiş|iade|son tarih|duedate|issuedate/.test(c)?i:-1).filter(i=>i>=0).slice(0,2);
+  for(const r of L.rows){const b=bc(r[lb]);if(!b)continue;
+   const ds=dc.map(i=>dt(r[i])).filter(Boolean).sort((a,b)=>a-b);
+   const o={out:ds.length>1?ds[0]:null,due:ds.length?ds[ds.length-1]:null};
+   const p=loan.get(b);if(!p||(o.due&&(!p.due||o.due>p.due)))loan.set(b,o)}
+ }
+ const today=new Date();today.setHours(0,0,0,0);
+ const L={kayip:[],odunc:[],iade:[],yok:[],dus:[],raf:[],bul:[]};const kset=new Set();let kt=0,gec=0;
+ const base=(it,x)=>Object.assign({'Barkod':it.b,'Eser Adı':it.ad,'Yazar':it.yz,'Yer No':it.yn,'Yeri':it.yr},x||{});
+ for(const r of K.rows){
+  const b=bc(r[k.b]);if(!b)continue;kt++;kset.add(b);
+  const it={b,ad:g(r,k.ad),yz:g(r,k.yz),yn:g(r,k.yn),yr:g(r,k.yr),mt:g(r,k.mt),sx:g(r,k.sx),od:g(r,k.od)};
+  const s=sayim.get(b),ln=loan.get(b);
+  const dus=it.sx&&tr(it.sx)!=='eser koleksiyonda';
+  if(dus){L.dus.push(base(it,{'Neden':'Statü: '+it.sx,'Sayımda':s?'Bulundu':'Yok'}));continue}
+  if(s){
+   L.bul.push(base(it,{'Sayımdaki raf':s.raf}));
+   if(/bulunamad/.test(tr(s.raf)))L.raf.push(base(it,{'Sayımdaki raf':s.raf}));
+   if(ln)L.iade.push(base(it,{'Ödünç tarihi':fd(ln.out),'Son iade':fd(ln.due)}));
+   continue}
+  if(it.mt&&tr(it.mt)!=='kitap'){L.dus.push(base(it,{'Neden':'Kitap dışı materyal: '+it.mt,'Sayımda':'Yok'}));continue}
+  if(ln){let gd=0;if(ln.due){const d=new Date(ln.due);d.setHours(0,0,0,0);gd=Math.max(0,Math.round((today-d)/864e5))}
+   if(gd>0)gec++;
+   L.odunc.push(base(it,{'Ödünç tarihi':fd(ln.out),'Son iade':fd(ln.due),'Gecikme (gün)':gd}));continue}
+  L.kayip.push(base(it,{'Not':it.od&&tr(it.od)!=='ödünç verilebilir'?it.od:''}));
+ }
+ L.odunc.sort((a,b)=>b['Gecikme (gün)']-a['Gecikme (gün)']);
+ for(const[b,s]of sayim)if(!kset.has(b))L.yok.push({'Barkod':b,'Eser Adı':s.ad,'Sayımdaki raf':s.raf});
+ R={L,kt,sn:sayim.size,bos,dup,gec,hasLoan:!!F.f3,sbos:L.raf.length};
+ cur='kayip';render();$('#res').hidden=false;$('#res').scrollIntoView({behavior:'smooth'});
+}
+const DEF=[
+ ['kayip','Kayıp adayı','Sayılmadı, ödünçte de görünmüyor','t-rd'],
+ ['odunc','Ödünçte','Sayılmadı, ödünç kaydı var','t-am'],
+ ['iade','Sayımda var, ödünçte görünüyor','İade işlenmemiş olabilir','t-am'],
+ ['yok','Sayımda var, Koha’da yok','Kayıt eksik olabilir','t-rd'],
+ ['dus','Düşümlü ve kitap dışı','Kayıp sayılmaz','t-gn'],
+ ['raf','Raf bulunamadı','Sayıldı, rafı belirsiz','t-gn'],
+ ['bul','Bulundu','Sayımda okunan, sorunsuz','t-gn']];
+function render(){
+ const{L}=R;
+ $('#info').textContent='Koha’da '+R.kt+' materyal var. Sayımda '+R.sn+' benzersiz barkod okunmuş'+(R.bos||R.dup?' ('+R.bos+' boş okuma, '+R.dup+' tekrar yok sayıldı).':'.');
+ const w=$('#warn');
+ if(!R.hasLoan){w.hidden=false;w.textContent='Ödünç raporu yüklenmedi. “Kayıp adayı” listesi şu an ödünçteki kitapları da içeriyor. Rapor gelince dosyayı ekleyip yeniden karşılaştır.'}else w.hidden=true;
+ $('#sum').innerHTML=DEF.map(d=>{const lab=d[0]==='kayip'&&!R.hasLoan?'Sayılmadı (ödünç kontrolü bekliyor)':d[1];
+  const sub=d[0]==='odunc'?R.gec+' tanesi gecikmiş':d[2];
+  return '<li class="'+d[3]+'"><button data-k="'+d[0]+'" class="'+(cur===d[0]?'on':'')+'"><span>'+lab+'<span class="s">'+sub+'</span></span><span class="n">'+L[d[0]].length+'</span></button></li>'}).join('');
+ document.querySelectorAll('#sum button').forEach(b=>b.onclick=()=>{cur=b.dataset.k;$('#q').value='';render()});
+ const rows=L[cur],q=tr($('#q').value),sh=q?rows.filter(r=>tr(Object.values(r).join(' ')).includes(q)):rows;
+ const tb=$('#tb');
+ if(!rows.length){tb.innerHTML='<tbody><tr><td>Bu listede kayıt yok.</td></tr></tbody>';$('#more').textContent=''}
+ else{const ks=Object.keys(rows[0]),e=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  tb.innerHTML='<thead><tr>'+ks.map(x=>'<th>'+e(x)+'</th>').join('')+'</tr></thead><tbody>'+sh.slice(0,200).map(r=>'<tr>'+ks.map(x=>'<td'+(x==='Eser Adı'?' class="w"':'')+'>'+e(r[x])+'</td>').join('')+'</tr>').join('')+'</tbody>';
+  $('#more').textContent=sh.length>200?sh.length+' kayıttan ilk 200’ü gösteriliyor. Tamamı Excel raporunda.':sh.length+' kayıt'+(q?' bulundu.':'.')}
+ const x=$('#xl'),m=$('#xm');
+ const xt=$('#xt');xt.textContent=DEF.find(d=>d[0]===cur)[1]+' listesini indir ('+L[cur].length+')';xt.hidden=!DL;$('#xb').hidden=!DL||!L[cur].length;$('#xp').hidden=!DL||!L[cur].length||cur==='bul'||cur==='yok';if(DL){x.hidden=false;m.hidden=true}else{x.hidden=true;m.hidden=false;m.textContent='İndirme bu görünümde kullanılamıyor. Sayfayı claude.ai üzerinde artifact olarak açıp tekrar dene.'}
+}
+$('#q').addEventListener('input',render);
+const SG={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'};
+const d10=()=>new Date().toISOString().slice(0,10);
+async function sv(n,d){try{await DL.save({filename:n,data:d})}catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}}
+$('#xb').addEventListener('click',()=>sv(SG[cur]+'-barkodlar-'+d10()+'.txt',R.L[cur].map(r=>r['Barkod']).join('\n')+'\n'));
+$('#xp').addEventListener('click',async()=>{
+ const b=$('#xp'),t0=b.textContent;b.disabled=true;b.textContent='PDF hazırlanıyor…';
+ await new Promise(r=>setTimeout(r,40));
+ try{
+  const title=DEF.find(d=>d[0]===cur)[1],S=2,W=595*S,H=842*S,M=34*S,RH=17*S,TOP=62*S;
+  const cmp=(a,b)=>String(a).trim().localeCompare(String(b).trim(),'tr',{numeric:true});
+  const rows=R.L[cur].slice().sort((a,b)=>cmp(a['Yeri']||'',b['Yeri']||'')||cmp(a['Yer No']||'',b['Yer No']||''));
+  const per=Math.floor((H-TOP-M)/RH),pages=[];let pg=[],last=null;
+  for(const r of rows){const y=String(r['Yeri']||'').trim()||'Yeri belirtilmemiş';
+   if(y!==last){if(pg.length>per-3){pages.push(pg);pg=[]}pg.push({h:y});last=y}
+   if(pg.length>=per){pages.push(pg);pg=[{h:y+' (devam)'}]}
+   pg.push(r)}
+  if(pg.length)pages.push(pg);
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
+  const ff='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif';
+  const fit=(s,w)=>{s=String(s||'');if(c.measureText(s).width<=w)return s;while(s.length>1&&c.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…'};
+  const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true});
+  pages.forEach((p,i)=>{
+   c.fillStyle='#fff';c.fillRect(0,0,W,H);c.fillStyle='#000';
+   c.font='bold '+14*S+'px '+ff;c.fillText('Raf kontrol listesi: '+title,M,34*S);
+   c.font=9*S+'px '+ff;c.fillStyle='#444';c.fillText(new Date().toLocaleDateString('tr-TR')+'   Toplam '+rows.length+' kitap   Sayfa '+(i+1)+'/'+pages.length,M,48*S);
+   let y=TOP;
+   p.forEach(r=>{
+    if(r.h!==undefined){c.fillStyle='#e3ebed';c.fillRect(M,y-11*S,W-2*M,16*S);c.fillStyle='#000';c.font='bold '+9*S+'px '+ff;c.fillText(r.h,M+4*S,y)}
+    else{c.strokeStyle='#000';c.lineWidth=S*.8;c.strokeRect(M+2*S,y-8*S,9*S,9*S);
+     c.fillStyle='#000';c.font=8.5*S+'px '+ff;
+     c.fillText(fit(r['Barkod'],80*S),M+18*S,y);c.fillText(fit(r['Yer No'],102*S),M+100*S,y);
+     c.fillText(fit(r['Eser Adı'],188*S),M+210*S,y);c.fillStyle='#444';c.fillText(fit(r['Yazar'],(W-M)-(M+404*S)),M+404*S,y);
+     c.strokeStyle='#ccc';c.lineWidth=S*.5;c.beginPath();c.moveTo(M,y+5*S);c.lineTo(W-M,y+5*S);c.stroke()}
+    y+=RH});
+   if(i)pdf.addPage();
+   pdf.addImage(cv.toDataURL('image/jpeg',.85),'JPEG',0,0,595,842)});
+  await sv(SG[cur]+'-raf-listesi-'+d10()+'.pdf',pdf.output('arraybuffer'));
+ }catch(e){alert('PDF oluşturulamadı: '+((e&&e.message)||e))}
+ finally{b.disabled=false;b.textContent=t0}
+});
+$('#xt').addEventListener('click',async()=>{
+ const rows=R.L[cur].length?R.L[cur]:[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
+ const slug={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'}[cur];
+ const ws=XLSX.utils.json_to_sheet(rows);
+ ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,DEF.find(d=>d[0]===cur)[1].slice(0,31));
+ const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+ try{await DL.save({filename:slug+'-'+new Date().toISOString().slice(0,10)+'.xlsx',data:buf})}
+ catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}
+});
+$('#xl').addEventListener('click',async()=>{
+ const{L}=R,wb=XLSX.utils.book_new();
+ const o=[['Kütüphane sayım raporu',new Date().toLocaleDateString('tr-TR')],[],['Koha’daki toplam materyal',R.kt],['Sayımda okunan benzersiz barkod',R.sn],['Sayımda boş okuma',R.bos],['Sayımda tekrar eden okuma',R.dup],[],['Liste','Adet']];
+ DEF.forEach(d=>o.push([d[0]==='kayip'&&!R.hasLoan?'Sayılmadı (ödünç kontrolü bekliyor)':d[1],L[d[0]].length]));
+ o.push(['Gecikmiş ödünç',R.gec]);if(!R.hasLoan)o.push([],['Not','Ödünç raporu yüklenmedi, kayıp adayı listesi ödünçtekileri de içerir.']);
+ const s0=XLSX.utils.aoa_to_sheet(o);s0['!cols']=[{wch:42},{wch:14}];XLSX.utils.book_append_sheet(wb,s0,'Özet');
+ const nm={kayip:'Kayıp adayı',odunc:'Ödünçte',iade:'İade işlenmemiş',yok:'Kohada yok',dus:'Düşüm-kitap dışı',raf:'Raf bulunamadı',bul:'Bulundu'};
+ for(const key of Object.keys(nm)){const rows=L[key].length?L[key]:[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
+  XLSX.utils.book_append_sheet(wb,ws,nm[key])}
+ const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+ try{await DL.save({filename:'sayim-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx',data:buf})}
+ catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}
+});
+</script>
+</body>
+</html>
