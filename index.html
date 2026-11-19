@@ -60,22 +60,23 @@ th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
 
 <section id="res" hidden>
 <p class="note" id="warn" hidden></p>
+<p class="info" id="sv"></p>
 <p class="info" id="info"></p>
 <ul class="sum" id="sum"></ul>
 <div class="bar"><input type="search" id="q" placeholder="Barkod veya eser adı ara" aria-label="Ara"></div>
 <div class="wrap"><table id="tb"></table></div>
 <p class="more" id="more"></p>
-<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><p class="info" id="xm" hidden></p></div>
+<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><button id="clr" class="sec">Kayıtlı verileri sil</button><p class="info" id="xm" hidden></p></div>
 </section>
 </main>
 <script>
 const $=s=>document.querySelector(s),tr=s=>String(s==null?'':s).trim().toLocaleLowerCase('tr');
 const F={};let DL=null,R=null,cur='kayip',SB=null;
-if(window.claude&&claude.use){claude.use('downloads').then(d=>{DL=d}).catch(()=>{})}
+if(window.claude&&claude.use){claude.use('downloads').then(d=>{DL=d;if(R)render()}).catch(()=>{})}
 const rd=f=>new Promise((ok,no)=>{const r=new FileReader(),c=/\.csv$/i.test(f.name);r.onload=e=>{try{ok(c?XLSX.read(e.target.result,{type:'string',raw:true}):XLSX.read(e.target.result,{type:'array',cellDates:true}))}catch(x){no(x)}};r.onerror=no;if(c)r.readAsText(f,'utf-8');else r.readAsArrayBuffer(f)});
 ['f1','f2','f3'].forEach((id,i)=>$('#'+id).addEventListener('change',async e=>{
- const f=e.target.files[0],st=$('#s'+(i+1));F[id]=null;st.textContent='';
- if(f){try{F[id]=await rd(f);st.textContent=f.name+' yüklendi';st.className='st ok'}catch(x){st.textContent='Dosya okunamadı. Excel (.xlsx) dosyası seç.';st.className='st err'}}
+ const f=e.target.files[0],st=$('#s'+(i+1));F[id]=null;st.textContent='';st.dataset.n='';
+ if(f){try{F[id]=await rd(f);st.textContent=f.name+' yüklendi';st.dataset.n=f.name;st.className='st ok'}catch(x){st.textContent='Dosya okunamadı. Excel (.xlsx) dosyası seç.';st.className='st err'}}
  $('#go').disabled=!(F.f1&&F.f2);
 }));
 function tbl(wb,key){
@@ -96,6 +97,7 @@ function run(){
  const sb=S.ix(/^(demirbaş no|barkod)$/),sa=S.ix(/eser adı/),sr=S.ix(/raf/);
  const sayim=new Map();let bos=0,dup=0;
  for(const r of S.rows){if(r.every(c=>c===''))continue;const b=bc(r[sb]);if(!b){bos++;continue}if(sayim.has(b)){dup++;continue}sayim.set(b,{ad:g(r,sa),raf:g(r,sr)})}
+ const D={s:[...sayim].map(([b,v])=>[b,v.ad,v.raf]),bos,dup,k:[],l:null,at:Date.now(),names:['#s1','#s2','#s3'].map(s=>$(s).dataset.n||'')};
  const k={b:K.ix(/^barkod$/),ad:K.ix(/eser adı/),yz:K.ix(/yazar/),yn:K.ix(/yer numarası/),mt:K.ix(/^materyal( türü)?$/),yr:K.ix(/^(materyalin )?yeri$/),sx:K.ix(/statü/),od:K.ix(/ödünç verilebilirlik/)};
  const loan=new Map();
  if(F.f3){
@@ -106,12 +108,17 @@ function run(){
    const o={out:ds.length>1?ds[0]:null,due:ds.length?ds[ds.length-1]:null};
    const p=loan.get(b);if(!p||(o.due&&(!p.due||o.due>p.due)))loan.set(b,o)}
  }
+ for(const r of K.rows){const b=bc(r[k.b]);if(b)D.k.push([b,g(r,k.ad),g(r,k.yz),g(r,k.yn),g(r,k.yr),g(r,k.mt),g(r,k.sx),g(r,k.od)])}
+ if(F.f3)D.l=[...loan].map(([b,o])=>[b,o.out?o.out.toISOString():'',o.due?o.due.toISOString():'']);
+ calc(D);save(D);$('#res').scrollIntoView({behavior:'smooth'});
+}
+function calc(D){
+ const sayim=new Map(D.s.map(a=>[a[0],{ad:a[1],raf:a[2]}])),loan=new Map((D.l||[]).map(a=>[a[0],{out:a[1]?new Date(a[1]):null,due:a[2]?new Date(a[2]):null}]));
  const today=new Date();today.setHours(0,0,0,0);
  const L={kayip:[],odunc:[],iade:[],yok:[],dus:[],raf:[],bul:[]};const kset=new Set();let kt=0,gec=0;
  const base=(it,x)=>Object.assign({'Barkod':it.b,'Eser Adı':it.ad,'Yazar':it.yz,'Yer No':it.yn,'Yeri':it.yr},x||{});
- for(const r of K.rows){
-  const b=bc(r[k.b]);if(!b)continue;kt++;kset.add(b);
-  const it={b,ad:g(r,k.ad),yz:g(r,k.yz),yn:g(r,k.yn),yr:g(r,k.yr),mt:g(r,k.mt),sx:g(r,k.sx),od:g(r,k.od)};
+ for(const a of D.k){
+  const it={b:a[0],ad:a[1],yz:a[2],yn:a[3],yr:a[4],mt:a[5],sx:a[6],od:a[7]},b=it.b;kt++;kset.add(b);
   const s=sayim.get(b),ln=loan.get(b);
   const dus=it.sx&&tr(it.sx)!=='eser koleksiyonda';
   if(dus){L.dus.push(base(it,{'Neden':'Statü: '+it.sx,'Sayımda':s?'Bulundu':'Yok'}));continue}
@@ -128,8 +135,8 @@ function run(){
  }
  L.odunc.sort((a,b)=>b['Gecikme (gün)']-a['Gecikme (gün)']);
  for(const[b,s]of sayim)if(!kset.has(b))L.yok.push({'Barkod':b,'Eser Adı':s.ad,'Sayımdaki raf':s.raf});
- R={L,kt,sn:sayim.size,bos,dup,gec,hasLoan:!!F.f3,sbos:L.raf.length};
- cur='kayip';render();$('#res').hidden=false;$('#res').scrollIntoView({behavior:'smooth'});
+ R={L,kt,sn:sayim.size,bos:D.bos,dup:D.dup,gec,hasLoan:!!D.l,at:D.at,names:D.names};
+ cur='kayip';render();$('#res').hidden=false;
 }
 const DEF=[
  ['kayip','Kayıp adayı','Sayılmadı, ödünçte de görünmüyor','t-rd'],
@@ -142,6 +149,7 @@ const DEF=[
 function render(){
  const{L}=R;
  $('#info').textContent='Koha’da '+R.kt+' materyal var. Sayımda '+R.sn+' benzersiz barkod okunmuş'+(R.bos||R.dup?' ('+R.bos+' boş okuma, '+R.dup+' tekrar yok sayıldı).':'.');
+ $('#sv').textContent=R.at?'Kayıtlı veri: '+new Date(R.at).toLocaleString('tr-TR')+(R.names&&R.names.some(Boolean)?' ('+R.names.filter(Boolean).join(', ')+')':'')+'. '+(DB?'Aynı bağlantıyı açan her cihazda görünür.':'Bu cihazın tarayıcısında saklanır.'):'';
  const w=$('#warn');
  if(!R.hasLoan){w.hidden=false;w.textContent='Ödünç raporu yüklenmedi. “Kayıp adayı” listesi şu an ödünçteki kitapları da içeriyor. Rapor gelince dosyayı ekleyip yeniden karşılaştır.'}else w.hidden=true;
  $('#sum').innerHTML=DEF.map(d=>{const lab=d[0]==='kayip'&&!R.hasLoan?'Sayılmadı (ödünç kontrolü bekliyor)':d[1];
@@ -155,12 +163,46 @@ function render(){
   tb.innerHTML='<thead><tr>'+ks.map(x=>'<th>'+e(x)+'</th>').join('')+'</tr></thead><tbody>'+sh.slice(0,200).map(r=>'<tr>'+ks.map(x=>'<td'+(x==='Eser Adı'?' class="w"':'')+'>'+e(r[x])+'</td>').join('')+'</tr>').join('')+'</tbody>';
   $('#more').textContent=sh.length>200?sh.length+' kayıttan ilk 200’ü gösteriliyor. Tamamı Excel raporunda.':sh.length+' kayıt'+(q?' bulundu.':'.')}
  const x=$('#xl'),m=$('#xm');
- const xt=$('#xt');xt.textContent=DEF.find(d=>d[0]===cur)[1]+' listesini indir ('+L[cur].length+')';xt.hidden=!DL;$('#xb').hidden=!DL||!L[cur].length;$('#xp').hidden=!DL||!L[cur].length||cur==='bul'||cur==='yok';if(DL){x.hidden=false;m.hidden=true}else{x.hidden=true;m.hidden=false;m.textContent='İndirme bu görünümde kullanılamıyor. Sayfayı claude.ai üzerinde artifact olarak açıp tekrar dene.'}
+ const xt=$('#xt');xt.textContent=DEF.find(d=>d[0]===cur)[1]+' listesini indir ('+L[cur].length+')';xt.hidden=false;$('#xb').hidden=!L[cur].length;$('#xp').hidden=!L[cur].length||cur==='bul'||cur==='yok';if(1){x.hidden=false;m.hidden=true}else{x.hidden=true;m.hidden=false;m.textContent='İndirme bu görünümde kullanılamıyor. Sayfayı claude.ai üzerinde artifact olarak açıp tekrar dene.'}
 }
 $('#q').addEventListener('input',render);
+async function put(n,d){if(DL)return DL.save({filename:n,data:d});const a=document.createElement('a'),u=URL.createObjectURL(new Blob([d]));a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4e3)}
+const CH={s:1500,k:700,l:1500};
+const ch=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
+let DB=null;
+const idb=()=>new Promise((ok,no)=>{const r=indexedDB.open('sayim',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const idbx=async(m,k,v)=>{const d=await idb();return new Promise((ok,no)=>{const t=d.transaction('k',m==='get'?'readonly':'readwrite'),s=t.objectStore('k'),q=m==='get'?s.get(k):m==='put'?s.put(v,k):s.delete(k);t.oncomplete=()=>ok(q.result);t.onerror=()=>no(t.error)})};
+async function save(D){
+ try{
+  if(DB){const c=DB.collection('sayim'),n={};
+   for(const key of ['s','k','l']){const ps=ch(D[key]||[],CH[key]);n[key]=ps.length;for(let i=0;i<ps.length;i++)await c.doc(key+'_'+i).set({r:JSON.stringify(ps[i])})}
+   await c.doc('meta').set({n,bos:D.bos,dup:D.dup,names:D.names,at:D.at,hasLoan:!!D.l})}
+  else await idbx('put','D',D)
+ }catch(e){alert('Veriler kaydedilemedi, sayfa kapanınca kaybolabilir: '+((e&&e.message)||e))}
+}
+async function loadSaved(){
+ try{
+  let D=null;
+  if(DB){const c=DB.collection('sayim'),m=await c.doc('meta').get();
+   if(m.exists){const d=m.data();D={bos:d.bos,dup:d.dup,names:d.names||[],at:d.at,s:[],k:[],l:d.hasLoan?[]:null};
+    for(const key of ['s','k','l'])for(let i=0;i<((d.n||{})[key]||0);i++){const s=await c.doc(key+'_'+i).get();D[key].push(...JSON.parse(s.data().r))}}}
+  else D=await idbx('get','D');
+  if(D){calc(D);$('#res').hidden=false}
+ }catch(e){}
+}
+$('#clr').addEventListener('click',async()=>{
+ if(!confirm('Kayıtlı veriler silinsin mi? Dosyaları yeniden yüklemen gerekir.'))return;
+ try{
+  if(DB){const c=DB.collection('sayim'),m=await c.doc('meta').get();
+   if(m.exists){const n=m.data().n||{};for(const key of ['s','k','l'])for(let i=0;i<(n[key]||0);i++)await c.doc(key+'_'+i).delete();await c.doc('meta').delete()}}
+  else await idbx('del','D');
+ }catch(e){alert('Silinemedi: '+((e&&e.message)||e));return}
+ R=null;$('#res').hidden=true;['f1','f2','f3'].forEach((id,i)=>{$('#'+id).value='';F[id]=null;$('#s'+(i+1)).textContent=''});$('#go').disabled=true;
+});
+(async()=>{if(window.claude&&claude.use){try{DB=await claude.use('db')}catch(e){DB=null}}await loadSaved()})();
 const SG={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'};
 const d10=()=>new Date().toISOString().slice(0,10);
-async function sv(n,d){try{await DL.save({filename:n,data:d})}catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}}
+async function sv(n,d){try{await put(n,d)}catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}}
 $('#xb').addEventListener('click',()=>sv(SG[cur]+'-barkodlar-'+d10()+'.txt',R.L[cur].map(r=>r['Barkod']).join('\n')+'\n'));
 $('#xp').addEventListener('click',async()=>{
  const b=$('#xp'),t0=b.textContent;b.disabled=true;b.textContent='PDF hazırlanıyor…';
@@ -205,7 +247,7 @@ $('#xt').addEventListener('click',async()=>{
  ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,DEF.find(d=>d[0]===cur)[1].slice(0,31));
  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
- try{await DL.save({filename:slug+'-'+new Date().toISOString().slice(0,10)+'.xlsx',data:buf})}
+ try{await put(slug+'-'+new Date().toISOString().slice(0,10)+'.xlsx',buf)}
  catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}
 });
 $('#xl').addEventListener('click',async()=>{
@@ -220,7 +262,7 @@ $('#xl').addEventListener('click',async()=>{
   ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
   XLSX.utils.book_append_sheet(wb,ws,nm[key])}
  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
- try{await DL.save({filename:'sayim-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx',data:buf})}
+ try{await put('sayim-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx',buf)}
  catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}
 });
 </script>
