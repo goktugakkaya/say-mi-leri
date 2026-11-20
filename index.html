@@ -45,7 +45,7 @@ th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ln);white-s
 td.w{white-space:normal;min-width:180px}
 th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
 .more{color:var(--mu);font-size:.85rem;margin:8px 2px 16px}
-.dl{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}.dl p{flex-basis:100%;margin:0}
+.dl{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}.dl p{flex-basis:100%;margin:0}.np{margin-top:14px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}.np[hidden]{display:none}.np select,.np textarea{font:inherit;font-size:.85rem;padding:8px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}.np p{margin:0}
 </style>
 </head>
 <body>
@@ -66,7 +66,8 @@ th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
 <div class="bar"><input type="search" id="q" placeholder="Barkod veya eser adı ara" aria-label="Ara"></div>
 <div class="wrap"><table id="tb"></table></div>
 <p class="more" id="more"></p>
-<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><button id="clr" class="sec">Kayıtlı verileri sil</button><p class="info" id="xm" hidden></p></div>
+<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xn" class="sec" hidden>iPhone Notlar için liste</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><button id="clr" class="sec">Kayıtlı verileri sil</button><p class="info" id="xm" hidden></p></div>
+<div class="np" id="np" hidden><b>iPhone Notlar için liste</b><label for="ns" class="info">Parça seç (bölüm ve sıra aralığı)</label><select id="ns"></select><textarea id="nt" rows="8" readonly></textarea><button id="nc">Kopyala</button><p class="info">Kopyala’ya bas, Notlar’da yeni not açıp yapıştır. Tüm metni seçip araç çubuğundaki kontrol listesi düğmesine basarsan her satır tik atılabilen kutucuğa dönüşür. Satır biçimi: yer no | eser adı | yazar | barkod.</p></div>
 </section>
 </main>
 <script>
@@ -163,7 +164,7 @@ function render(){
   tb.innerHTML='<thead><tr>'+ks.map(x=>'<th>'+e(x)+'</th>').join('')+'</tr></thead><tbody>'+sh.slice(0,200).map(r=>'<tr>'+ks.map(x=>'<td'+(x==='Eser Adı'?' class="w"':'')+'>'+e(r[x])+'</td>').join('')+'</tr>').join('')+'</tbody>';
   $('#more').textContent=sh.length>200?sh.length+' kayıttan ilk 200’ü gösteriliyor. Tamamı Excel raporunda.':sh.length+' kayıt'+(q?' bulundu.':'.')}
  const x=$('#xl'),m=$('#xm');
- const xt=$('#xt');xt.textContent=DEF.find(d=>d[0]===cur)[1]+' listesini indir ('+L[cur].length+')';xt.hidden=false;$('#xb').hidden=!L[cur].length;$('#xp').hidden=!L[cur].length||cur==='bul'||cur==='yok';if(1){x.hidden=false;m.hidden=true}else{x.hidden=true;m.hidden=false;m.textContent='İndirme bu görünümde kullanılamıyor. Sayfayı claude.ai üzerinde artifact olarak açıp tekrar dene.'}
+ const xt=$('#xt');xt.textContent=DEF.find(d=>d[0]===cur)[1]+' listesini indir ('+L[cur].length+')';xt.hidden=false;$('#xb').hidden=!L[cur].length;$('#xn').hidden=!L[cur].length||cur==='bul'||cur==='yok';$('#np').hidden=true;$('#xp').hidden=!L[cur].length||cur==='bul'||cur==='yok';if(1){x.hidden=false;m.hidden=true}else{x.hidden=true;m.hidden=false;m.textContent='İndirme bu görünümde kullanılamıyor. Sayfayı claude.ai üzerinde artifact olarak açıp tekrar dene.'}
 }
 $('#q').addEventListener('input',render);
 async function put(n,d){if(DL)return DL.save({filename:n,data:d});const a=document.createElement('a'),u=URL.createObjectURL(new Blob([d]));a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4e3)}
@@ -201,6 +202,27 @@ $('#clr').addEventListener('click',async()=>{
 });
 (async()=>{if(window.claude&&claude.use){try{DB=await claude.use('db')}catch(e){DB=null}}await loadSaved()})();
 const SG={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'};
+let NG=[];
+const shown=()=>{$('#nt').value=NG[+$('#ns').value].l.join('\n')};
+$('#ns').addEventListener('change',shown);
+$('#xn').addEventListener('click',()=>{
+ const cmp=(a,b)=>String(a).trim().localeCompare(String(b).trim(),'tr',{numeric:true});
+ const rows=R.L[cur].slice().sort((a,b)=>cmp(a['Yeri']||'',b['Yeri']||'')||cmp(a['Yer No']||'',b['Yer No']||''));
+ const G=[];let ly=null,n=0;
+ for(const r of rows){const y=String(r['Yeri']||'').trim()||'Yeri belirtilmemiş';
+  if(y!==ly||n>=150){G.push({y,l:[]});ly=y;n=0}
+  G[G.length-1].l.push([r['Yer No'],r['Eser Adı'],r['Yazar'],r['Barkod']].filter(Boolean).join(' | '));n++}
+ let off=0,py=null;
+ G.forEach(g=>{if(g.y!==py){off=0;py=g.y}g.a=off+1;off+=g.l.length;g.b=off});
+ NG=G;
+ $('#ns').innerHTML=G.map((g,i)=>'<option value="'+i+'">'+g.y.replace(/[&<>]/g,'')+' ('+g.a+'–'+g.b+')</option>').join('');
+ shown();$('#np').hidden=false;$('#np').scrollIntoView({behavior:'smooth'});
+});
+$('#nc').addEventListener('click',async()=>{
+ const t=$('#nt'),b=$('#nc');t.focus();t.select();t.setSelectionRange(0,t.value.length);
+ let ok=false;try{await navigator.clipboard.writeText(t.value);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(x){}}
+ b.textContent=ok?'Kopyalandı':'Metin seçildi, Kopyala’ya dokun';setTimeout(()=>{b.textContent='Kopyala'},2500);
+});
 const d10=()=>new Date().toISOString().slice(0,10);
 async function sv(n,d){try{await put(n,d)}catch(e){if(!e||e.code!=='declined')alert('İndirme başarısız: '+((e&&e.message)||e))}}
 $('#xb').addEventListener('click',()=>sv(SG[cur]+'-barkodlar-'+d10()+'.txt',R.L[cur].map(r=>r['Barkod']).join('\n')+'\n'));
