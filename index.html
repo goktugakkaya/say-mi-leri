@@ -46,13 +46,36 @@ td.w{white-space:normal;min-width:180px}
 th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
 .more{color:var(--mu);font-size:.85rem;margin:8px 2px 16px}
 .dl{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}.dl p{flex-basis:100%;margin:0}.np{margin-top:14px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}.np[hidden]{display:none}.np select,.np textarea{font:inherit;font-size:.85rem;padding:8px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}.np p{margin:0}
+.cl{display:flex;gap:10px;align-items:center;min-height:40px}.cl input{width:20px;height:20px;flex:none}
+.fq{background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}.fq[hidden]{display:none}
+.fq input{width:100%;font:inherit;font-size:1.2rem;padding:12px;border:2px solid var(--ac);border-radius:10px;background:var(--bg);color:var(--ink);letter-spacing:.05em}
+.fs{margin:10px 0;padding:12px;border-radius:8px;font-weight:600;background:var(--bg)}
+.fs.ok{background:color-mix(in srgb,var(--gn) 18%,var(--sf));color:var(--gn)}.fs.dup{background:color-mix(in srgb,var(--am) 18%,var(--sf));color:var(--am)}.fs.no{background:color-mix(in srgb,var(--rd) 15%,var(--sf));color:var(--rd)}
+#fh{font-size:.82rem;color:var(--mu);min-height:1em}
+.tabs{display:flex;gap:6px;margin:0 0 18px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:4px}
+.tabs button{flex:1;background:transparent;color:var(--mu)}
+.tabs button.on{background:var(--ac);color:var(--acf)}
+.prog{height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:6px 0}
+.prog div{height:100%;background:var(--gn);width:0}
+.ctr{font-weight:700;margin:4px 0 10px}
+.chips{display:flex;gap:6px;margin-bottom:10px}
+.chips button{flex:1;padding:8px;min-height:40px;background:transparent;color:var(--ac);border:1.5px solid var(--ac)}
+.chips button.on{background:var(--ac);color:var(--acf)}
+.ci{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;font-weight:400;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:8px;min-height:56px}
+.ci .bx{flex:none;width:26px;height:26px;border:2px solid var(--mu);border-radius:7px;display:grid;place-items:center;font-weight:700;color:var(--acf)}
+.ci.f{background:color-mix(in srgb,var(--gn) 12%,var(--sf))}
+.ci.f .bx{background:var(--gn);border-color:var(--gn)}
+.ci b{display:block;font-weight:600}.ci small{display:block;color:var(--mu);font-size:.82rem}
+.ci.f b{text-decoration:line-through;opacity:.7}
 </style>
 </head>
 <body>
 <main>
 <h1>Sayım karşılaştırma</h1>
 <p class="sub">Dosyalar yalnızca bu sayfada, tarayıcında işlenir. Hiçbir yere gönderilmez.</p>
+<nav class="tabs"><button id="n1" class="on">Karşılaştırma</button><button id="n2">Raf kontrolü</button></nav>
 
+<div id="v1">
 <div class="file"><b>RFID Sayım Sonucu</b><small>“Demirbaş No” sütunu olan Excel dosyası</small><input type="file" id="f1" accept=".xlsx,.xls"><span class="st" id="s1"></span></div>
 <div class="file"><b>KOHA Materyal Listesi</b><small>“BARKOD” sütunu olan tüm materyal dökümü</small><input type="file" id="f2" accept=".xlsx,.xls"><span class="st" id="s2"></span></div>
 <div class="file"><b>Ödünçte Olan Materyaller</b><small>Excel veya CSV. “Barkod/barcode” ve tarih sütunları okunur, kişisel veri okunmaz</small><input type="file" id="f3" accept=".xlsx,.xls,.csv"><span class="st" id="s3"></span></div>
@@ -66,9 +89,27 @@ th{position:sticky;top:0;background:var(--sf);color:var(--mu);font-weight:600}
 <div class="bar"><input type="search" id="q" placeholder="Barkod veya eser adı ara" aria-label="Ara"></div>
 <div class="wrap"><table id="tb"></table></div>
 <p class="more" id="more"></p>
-<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xn" class="sec" hidden>iPhone Notlar için liste</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><button id="clr" class="sec">Kayıtlı verileri sil</button><p class="info" id="xm" hidden></p></div>
+<div class="dl"><button id="xt" hidden></button><button id="xb" class="sec" hidden>Barkodları indir (.txt)</button><button id="xp" class="sec" hidden>Raf kontrol listesini indir (PDF)</button><button id="xn" class="sec" hidden>iPhone Notlar için liste</button><button id="xc" class="sec">Rapor sütunlarını seç</button><button id="xl" class="sec" hidden>Tüm sekmeleri tek dosyada indir</button><button id="clr" class="sec">Kayıtlı verileri sil</button><p class="info" id="xm" hidden></p></div>
+<div class="np" id="cp" hidden></div>
 <div class="np" id="np" hidden><b>iPhone Notlar için liste</b><label for="ns" class="info">Parça seç (bölüm ve sıra aralığı)</label><select id="ns"></select><textarea id="nt" rows="8" readonly></textarea><button id="nc">Kopyala</button><p class="info">Kopyala’ya bas, Notlar’da yeni not açıp yapıştır. Tüm metni seçip araç çubuğundaki kontrol listesi düğmesine basarsan her satır tik atılabilen kutucuğa dönüşür. Satır biçimi: yer no | eser adı | yazar | barkod.</p></div>
-</section>
+</section></div>
+<div id="v2" hidden>
+ <div id="c0">
+  <div class="file"><b>Kontrol edilecek liste</b><small>Bu uygulamadan indirdiğin Excel listesi (Kayıp adayı, Ödünçte vb.)</small><input type="file" id="cf" accept=".xlsx,.xls"><span class="st" id="cs"></span></div>
+  <button id="cu" class="sec" hidden>Karşılaştırmada açık olan listeyi aktar</button>
+ </div>
+ <div id="c1" hidden>
+  <p class="info" id="cn"></p>
+  <div class="prog"><div id="cb"></div></div>
+  <p class="ctr" id="ct"></p>
+  <button id="fm" class="sec" style="width:100%;margin-bottom:10px">Hızlı barkod modu</button>
+  <div class="fq" id="fq" hidden><input id="fi" inputmode="numeric" autocomplete="off" autocapitalize="off" placeholder="Barkodu okut veya yaz" aria-label="Barkod"><div id="fs" class="fs">Hazır. Barkod listedeyse otomatik tik atılır.</div><div id="fh"></div><p class="info" id="fx" style="margin:8px 0 0"></p></div>
+  <div class="chips"><button data-f="a" class="on">Tümü</button><button data-f="p">Bekleyen</button><button data-f="f">Bulunan</button></div>
+  <div class="bar"><input type="search" id="cq" placeholder="Barkod, eser adı veya yer no ara" aria-label="Ara"></div>
+  <div id="cl"></div><p class="more" id="cm"></p>
+  <div class="dl"><button id="cx">Raporu indir (Excel)</button><button id="cy" class="sec">Bulunanlar (.txt)</button><button id="cz" class="sec">Bulunamayanlar (.txt)</button><button id="cr" class="sec">Yeni liste yükle</button></div>
+ </div>
+</div>
 </main>
 <script>
 const $=s=>document.querySelector(s),tr=s=>String(s==null?'':s).trim().toLocaleLowerCase('tr');
@@ -86,7 +127,7 @@ function tbl(wb,key){
  const h=rows.findIndex(r=>r.some(c=>key.test(tr(c))));
  if(h<0)throw new Error('Barkod başlığı bulunamadı');
  const head=rows[h].map(tr);
- return{rows:rows.slice(h+1),head,ix:re=>head.findIndex(c=>re.test(c))};
+ return{rows:rows.slice(h+1),head,raw:rows[h].map(c=>String(c).trim()),ix:re=>head.findIndex(c=>re.test(c))};
 }
 const bc=v=>typeof v==='number'?String(Math.round(v)):(v instanceof Date?'':String(v==null?'':v).trim());
 const dt=v=>{if(v instanceof Date)return isNaN(v)?null:v;if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);if(m){const d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d}}if(typeof v==='string'&&v.trim()){const d=new Date(v.trim().replace(' ','T'));return isNaN(d)?null:d}return null};
@@ -99,17 +140,19 @@ function run(){
  const sayim=new Map();let bos=0,dup=0;
  for(const r of S.rows){if(r.every(c=>c===''))continue;const b=bc(r[sb]);if(!b){bos++;continue}if(sayim.has(b)){dup++;continue}sayim.set(b,{ad:g(r,sa),raf:g(r,sr)})}
  const D={s:[...sayim].map(([b,v])=>[b,v.ad,v.raf]),bos,dup,k:[],l:null,at:Date.now(),names:['#s1','#s2','#s3'].map(s=>$(s).dataset.n||'')};
- const k={b:K.ix(/^barkod$/),ad:K.ix(/eser adı/),yz:K.ix(/yazar/),yn:K.ix(/yer numarası/),mt:K.ix(/^materyal( türü)?$/),yr:K.ix(/^(materyalin )?yeri$/),sx:K.ix(/statü/),od:K.ix(/ödünç verilebilirlik/)};
- const loan=new Map();
+ const k={b:K.ix(/^barkod$/),ad:K.ix(/eser adı/),yz:K.ix(/yazar/),yn:K.ix(/yer numarası/),mt:K.ix(/^materyal( türü)?$/),yr:K.ix(/^(materyalin )?yeri$/),sx:K.ix(/statü/),od:K.ix(/ödünç verilebilirlik/),isbn:K.ix(/^isbn$/),pub:K.ix(/^yayıncı$/),yil:K.ix(/^yıl$/),sin:K.ix(/^sınıflandırma$/),fiy:K.ix(/^fiyatı$/),ekt:K.ix(/materyal ekleme tarihi/),kbs:K.ix(/kbs sicil/),kbb:K.ix(/kbs barkod/),hed:K.ix(/^hedef kitle$/),dil:K.ix(/^dil$/),ner:K.ix(/nereden sağlandığı/),bas:K.ix(/basım bildirimi/),der:K.ix(/derleme numarası/)};
+ const loan=new Map();LP.clear();
  if(F.f3){
   const L=tbl(F.f3,/^(barkod|barcode)$/),lb=L.ix(/^(barkod|barcode)$/);
   const dc=L.head.map((c,i)=>/ödünç alış|süre bitiş|iade|son tarih|duedate|issuedate/.test(c)?i:-1).filter(i=>i>=0).slice(0,2);
+  const iu=L.ix(/^kullanıcı$/),ifn=L.ix(/^firstname$/),isn=L.ix(/^surname$/),itl=L.ix(/telefon numarası|^phone$/),ik=L.ix(/^kullanıcı kategorisi$|^categorycode$/);
   for(const r of L.rows){const b=bc(r[lb]);if(!b)continue;
+   const up=[g(r,iu)||[g(r,ifn),g(r,isn)].filter(Boolean).join(' '),g(r,itl),g(r,ik)];if(up.some(Boolean))LP.set(b,up);
    const ds=dc.map(i=>dt(r[i])).filter(Boolean).sort((a,b)=>a-b);
    const o={out:ds.length>1?ds[0]:null,due:ds.length?ds[ds.length-1]:null};
    const p=loan.get(b);if(!p||(o.due&&(!p.due||o.due>p.due)))loan.set(b,o)}
  }
- for(const r of K.rows){const b=bc(r[k.b]);if(b)D.k.push([b,g(r,k.ad),g(r,k.yz),g(r,k.yn),g(r,k.yr),g(r,k.mt),g(r,k.sx),g(r,k.od)])}
+ for(const r of K.rows){const b=bc(r[k.b]);if(b)D.k.push([b,g(r,k.ad),g(r,k.yz),g(r,k.yn),g(r,k.yr),g(r,k.mt),g(r,k.sx),g(r,k.od),g(r,k.isbn),g(r,k.pub),g(r,k.yil),g(r,k.sin),g(r,k.fiy),g(r,k.ekt),g(r,k.kbs),g(r,k.kbb),g(r,k.hed),g(r,k.dil),g(r,k.ner),g(r,k.bas),g(r,k.der)])}
  if(F.f3)D.l=[...loan].map(([b,o])=>[b,o.out?o.out.toISOString():'',o.due?o.due.toISOString():'']);
  calc(D);save(D);$('#res').scrollIntoView({behavior:'smooth'});
 }
@@ -117,9 +160,9 @@ function calc(D){
  const sayim=new Map(D.s.map(a=>[a[0],{ad:a[1],raf:a[2]}])),loan=new Map((D.l||[]).map(a=>[a[0],{out:a[1]?new Date(a[1]):null,due:a[2]?new Date(a[2]):null}]));
  const today=new Date();today.setHours(0,0,0,0);
  const L={kayip:[],odunc:[],iade:[],yok:[],dus:[],raf:[],bul:[]};const kset=new Set();let kt=0,gec=0;
- const base=(it,x)=>Object.assign({'Barkod':it.b,'Eser Adı':it.ad,'Yazar':it.yz,'Yer No':it.yn,'Yeri':it.yr},x||{});
+ const base=(it,x)=>{const o=Object.assign({'Barkod':it.b,'Eser Adı':it.ad,'Yazar':it.yz,'Yer No':it.yn,'Yeri':it.yr},x||{});Object.defineProperty(o,'_x',{value:it.x||{}});return o};
  for(const a of D.k){
-  const it={b:a[0],ad:a[1],yz:a[2],yn:a[3],yr:a[4],mt:a[5],sx:a[6],od:a[7]},b=it.b;kt++;kset.add(b);
+  const it={b:a[0],ad:a[1],yz:a[2],yn:a[3],yr:a[4],mt:a[5],sx:a[6],od:a[7],x:{}},b=it.b;for(const c of CS)if(!c.p)it.x[c.k]=a[c.i]||'';const lp=LP.get(b);if(lp){it.x.u=lp[0];it.x.tel=lp[1];it.x.kat=lp[2]}kt++;kset.add(b);
   const s=sayim.get(b),ln=loan.get(b);
   const dus=it.sx&&tr(it.sx)!=='eser koleksiyonda';
   if(dus){L.dus.push(base(it,{'Neden':'Statü: '+it.sx,'Sayımda':s?'Bulundu':'Yok'}));continue}
@@ -136,7 +179,7 @@ function calc(D){
  }
  L.odunc.sort((a,b)=>b['Gecikme (gün)']-a['Gecikme (gün)']);
  for(const[b,s]of sayim)if(!kset.has(b))L.yok.push({'Barkod':b,'Eser Adı':s.ad,'Sayımdaki raf':s.raf});
- R={L,kt,sn:sayim.size,bos:D.bos,dup:D.dup,gec,hasLoan:!!D.l,at:D.at,names:D.names};
+ R={L,kt,sn:sayim.size,bos:D.bos,dup:D.dup,gec,hasLoan:!!D.l,at:D.at,names:D.names,ext:D.k.length>0&&D.k[0].length>8};
  cur='kayip';render();$('#res').hidden=false;
 }
 const DEF=[
@@ -168,7 +211,7 @@ function render(){
 }
 $('#q').addEventListener('input',render);
 async function put(n,d){if(DL)return DL.save({filename:n,data:d});const a=document.createElement('a'),u=URL.createObjectURL(new Blob([d]));a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4e3)}
-const CH={s:1500,k:700,l:1500};
+const CH={s:1500,k:250,l:1500};
 const ch=(a,n)=>{const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o};
 let DB=null;
 const idb=()=>new Promise((ok,no)=>{const r=indexedDB.open('sayim',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
@@ -192,7 +235,7 @@ async function loadSaved(){
  }catch(e){}
 }
 $('#clr').addEventListener('click',async()=>{
- if(!confirm('Kayıtlı veriler silinsin mi? Dosyaları yeniden yüklemen gerekir.'))return;
+ const cb=$('#clr');if(!cb.dataset.sure){cb.dataset.sure='1';cb.textContent='Silmek için tekrar dokun';setTimeout(()=>{delete cb.dataset.sure;cb.textContent='Kayıtlı verileri sil'},4000);return}delete cb.dataset.sure;cb.textContent='Kayıtlı verileri sil';
  try{
   if(DB){const c=DB.collection('sayim'),m=await c.doc('meta').get();
    if(m.exists){const n=m.data().n||{};for(const key of ['s','k','l'])for(let i=0;i<(n[key]||0);i++)await c.doc(key+'_'+i).delete();await c.doc('meta').delete()}}
@@ -201,6 +244,88 @@ $('#clr').addEventListener('click',async()=>{
  R=null;$('#res').hidden=true;['f1','f2','f3'].forEach((id,i)=>{$('#'+id).value='';F[id]=null;$('#s'+(i+1)).textContent=''});$('#go').disabled=true;
 });
 (async()=>{if(window.claude&&claude.use){try{DB=await claude.use('db')}catch(e){DB=null}}await loadSaved()})();
+const LP=new Map();
+const CS=[{k:'isbn',l:'ISBN',i:8},{k:'pub',l:'Yayıncı',i:9},{k:'yil',l:'Yıl',i:10},{k:'sin',l:'Sınıflandırma',i:11},{k:'fiy',l:'Fiyatı',i:12},{k:'ekt',l:'Materyal ekleme tarihi',i:13},{k:'kbs',l:'KBS sicil no',i:14},{k:'kbb',l:'KBS barkod',i:15},{k:'hed',l:'Hedef kitle',i:16},{k:'dil',l:'Dil',i:17},{k:'ner',l:'Nereden sağlandığı',i:18},{k:'bas',l:'Basım bildirimi',i:19},{k:'der',l:'Derleme numarası',i:20},{k:'mt',l:'Materyal türü',i:5},{k:'od',l:'Ödünç verilebilirlik',i:7},{k:'u',l:'Kullanıcı',p:1},{k:'tel',l:'Telefon',p:1},{k:'kat',l:'Kullanıcı kategorisi',p:1}];
+let SEL=new Set();try{SEL=new Set(JSON.parse(localStorage.getItem('sayim_cols')||'[]'))}catch(e){}
+function prep(rows,key){const P=key==='odunc'||key==='iade';
+ return rows.map(r=>{if(!r._x)return r;const o={};
+  for(const k of Object.keys(r)){o[k]=r[k];
+   if(k==='Yeri')for(const c of CS){if(!SEL.has(c.k))continue;if(c.p&&!(P&&c.k in r._x))continue;o[c.l]=r._x[c.k]==null?'':r._x[c.k]}}
+  return o})}
+function cpRender(){const L=p=>CS.filter(c=>!!c.p===p).map(c=>'<label class="cl"><input type="checkbox" data-k="'+c.k+'"'+(SEL.has(c.k)?' checked':'')+'>'+c.l+'</label>').join('');
+ $('#cp').innerHTML='<b>Rapor sütunları</b><p class="info">Barkod, eser adı, yazar, yer no ve yeri her zaman dahil. Seçimlerin bu cihazda hatırlanır ve Excel raporlarına uygulanır.</p>'+((R&&!R.ext)?'<p class="note">Kayıtlı Koha verisi eski sürümden kalmış, yeni sütunlar boş çıkar. KOHA Materyal Listesi’ni yeniden yükleyip Karşılaştır’a bas.</p>':'')+L(false)+'<b>Kullanıcı bilgileri</b><p class="info">Kişisel veri içerir, yalnızca Ödünçte ve İade işlenmemiş listelerine eklenir.'+(LP.size?'':' Şu an yüklü değil, ödünç dosyasını bu oturumda yeniden yüklemen gerekir.')+'</p>'+L(true)}
+$('#cp').addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;e.target.checked?SEL.add(k):SEL.delete(k);try{localStorage.setItem('sayim_cols',JSON.stringify([...SEL]))}catch(x){}});
+$('#xc').onclick=()=>{const p=$('#cp');p.hidden=!p.hidden;if(!p.hidden){cpRender();p.scrollIntoView({behavior:'smooth'})}};
+let CK=null,cfl='a',cshow=100;
+const CKM=new Map();
+const ckSave=()=>{clearTimeout(ckSave.t);ckSave.t=setTimeout(()=>{try{localStorage.setItem('sayim_chk',JSON.stringify(CK))}catch(e){}},300)};
+try{const s=localStorage.getItem('sayim_chk');if(s)CK=JSON.parse(s)}catch(e){}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function ckStart(name,rows){
+ const cmp=(a,b)=>String(a).trim().localeCompare(String(b).trim(),'tr',{numeric:true});
+ const items=rows.filter(r=>r['Barkod']).map(r=>({b:bc(r['Barkod']),ad:String(r['Eser Adı']||''),yz:String(r['Yazar']||''),yn:String(r['Yer No']||''),yr:String(r['Yeri']||'').trim(),ok:0,o:Object.fromEntries(Object.entries(r).filter(([k])=>!['Barkod','Eser Adı','Yazar','Yer No','Yeri'].includes(k)))})).sort((a,b)=>cmp(a.yr,b.yr)||cmp(a.yn,b.yn));
+ if(!items.length){alert('Listede barkod bulunamadı.');return}
+ CK={name,at:Date.now(),items};ckSave();cshow=100;ckRender();
+}
+function ckCount(){const n=CK.items.length,f=CK.items.filter(x=>x.ok).length;$('#ct').textContent='Bulunan '+f+', kalan '+(n-f);$('#cb').style.width=(n?f/n*100:0)+'%'}
+function ckRender(){
+ $('#cu').hidden=!R;
+ if(!CK){$('#c0').hidden=false;$('#c1').hidden=true;return}
+ $('#c0').hidden=true;$('#c1').hidden=false;
+ $('#cn').textContent=CK.name+' ('+CK.items.length+' kitap)';ckCount();
+ const q=tr($('#cq').value);
+ const v=CK.items.filter(x=>(cfl==='a'||(cfl==='f')===!!x.ok)&&(!q||tr(x.b+' '+x.ad+' '+x.yz+' '+x.yn).includes(q)));
+ CKM.clear();CK.items.forEach(x=>CKM.set(x.b,x));
+ $('#cl').innerHTML=v.slice(0,cshow).map(x=>'<button class="ci'+(x.ok?' f':'')+'" data-b="'+esc(x.b)+'"><span class="bx">'+(x.ok?'✓':'')+'</span><span><b>'+esc(x.ad||'(adsız)')+'</b><small>'+esc([x.yn,x.yr,x.yz,x.b].filter(Boolean).join(' · '))+'</small></span></button>').join('');
+ $('#cm').innerHTML=v.length>cshow?v.length+' kayıttan '+cshow+' tanesi gösteriliyor. <a href="#" id="cmo">Daha fazla göster</a>':v.length+' kayıt';
+ const mo=$('#cmo');if(mo)mo.onclick=e=>{e.preventDefault();cshow+=200;ckRender()};
+}
+$('#cl').addEventListener('click',e=>{const b=e.target.closest('.ci');if(!b)return;const x=CKM.get(b.dataset.b);if(!x)return;
+ x.ok=x.ok?0:Date.now();b.classList.toggle('f',!!x.ok);b.querySelector('.bx').textContent=x.ok?'✓':'';ckCount();ckSave();if(cfl!=='a'){const y=window.scrollY;ckRender();window.scrollTo(0,y)}});
+$('#cq').addEventListener('input',()=>{cshow=100;ckRender()});
+document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{cfl=b.dataset.f;document.querySelectorAll('.chips button').forEach(c=>c.classList.toggle('on',c===b));cshow=100;ckRender()});
+let AC=null;const beep=(f,d)=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}};
+const FH=[];
+function fscan(v,force){
+ v=bc(v);if(!v)return;const x=CKM.get(v);if(!x&&!force)return;
+ let cl,msg;
+ if(x){if(x.ok){cl='dup';msg='Zaten işaretli: '+(x.ad||v);beep(440,.2)}
+  else{x.ok=Date.now();cl='ok';msg='✓ '+(x.ad||v)+(x.yn?' ('+x.yn+')':'');beep(880,.09);
+   const el=document.querySelector('.ci[data-b="'+CSS.escape(v)+'"]');if(el){el.classList.add('f');el.querySelector('.bx').textContent='✓'}ckCount()}}
+ else{CK.extra=CK.extra||[];if(!CK.extra.some(e=>e.b===v))CK.extra.push({b:v,t:Date.now()});cl='no';msg='Listede yok: '+v;beep(220,.3)}
+ $('#fs').className='fs '+cl;$('#fs').textContent=msg;
+ FH.unshift((cl==='ok'?'✓ ':cl==='dup'?'= ':'✗ ')+(x?x.ad||v:v));FH.length=Math.min(FH.length,5);$('#fh').innerHTML=FH.map(esc).join('<br>');
+ $('#fx').textContent='Listede olmayan okuma: '+(CK.extra||[]).length;ckSave();if(cfl!=='a'&&x){const y=window.scrollY;ckRender();window.scrollTo(0,y)}
+}
+$('#fm').onclick=()=>{const p=$('#fq');p.hidden=!p.hidden;if(!p.hidden){$('#fx').textContent='Listede olmayan okuma: '+((CK&&CK.extra)||[]).length;$('#fi').focus()}};
+$('#fi').addEventListener('input',e=>{const v=e.target.value.trim();if(v&&CKM.has(v)){fscan(v);e.target.value=''}});
+$('#fi').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim();if(v){fscan(v,true);e.target.value=''}}});
+$('#n1').onclick=()=>{$('#v1').hidden=false;$('#v2').hidden=true;$('#n1').classList.add('on');$('#n2').classList.remove('on')};
+$('#n2').onclick=()=>{$('#v1').hidden=true;$('#v2').hidden=false;$('#n2').classList.add('on');$('#n1').classList.remove('on');ckRender()};
+$('#cf').addEventListener('change',async e=>{const f=e.target.files[0],st=$('#cs');if(!f)return;
+ try{const T=tbl(await rd(f),/^barkod$/),i={b:T.ix(/^barkod$/),a:T.ix(/eser adı/),y:T.ix(/yazar/),n:T.ix(/yer no/),r:T.ix(/^yeri$/)};
+  ckStart(f.name.replace(/\.xlsx?$/i,''),T.rows.map(r=>{const o={'Barkod':r[i.b],'Eser Adı':g(r,i.a),'Yazar':g(r,i.y),'Yer No':g(r,i.n),'Yeri':g(r,i.r)};T.raw.forEach((h,j)=>{if(h&&!(h in o))o[h]=g(r,j)});return o}));st.textContent=''}
+ catch(x){st.textContent='Liste okunamadı: '+x.message;st.className='st err'}e.target.value=''});
+$('#cu').onclick=()=>ckStart(DEF.find(d=>d[0]===cur)[1],prep(R.L[cur],cur));
+$('#cr').onclick=()=>{const b=$('#cr');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='İşaretlemeler silinecek, onaylamak için tekrar dokun';setTimeout(()=>{delete b.dataset.sure;b.textContent='Yeni liste yükle'},4000);return}
+ delete b.dataset.sure;b.textContent='Yeni liste yükle';CK=null;try{localStorage.removeItem('sayim_chk')}catch(e){}ckRender()};
+let XM=null,XMR=null;
+function selX(b){const o={};if(!R)return o;
+ if(XMR!==R){XM=new Map();for(const k in R.L)for(const r of R.L[k])if(r._x&&!XM.has(r['Barkod']))XM.set(r['Barkod'],r._x);XMR=R}
+ const x=XM.get(b);if(!x)return o;
+ for(const c of CS){if(!SEL.has(c.k))continue;if(c.p&&!(c.k in x))continue;o[c.l]=x[c.k]==null?'':x[c.k]}return o}
+const ckR=ok=>CK.items.filter(x=>!!x.ok===ok).map(x=>Object.assign({'Barkod':x.b,'Eser Adı':x.ad,'Yazar':x.yz,'Yer No':x.yn,'Yeri':x.yr},selX(x.b),x.o||{},selX(x.b),ok?{'Bulunma zamanı':new Date(x.ok).toLocaleString('tr-TR')}:{}));
+const ckN=(ok)=>(ok?'bulunanlar-':'bulunamayanlar-')+new Date().toISOString().slice(0,10)+'.txt';
+$('#cy').onclick=()=>sv(ckN(true),ckR(true).map(r=>r['Barkod']).join('\n')+'\n');
+$('#cz').onclick=()=>sv(ckN(false),ckR(false).map(r=>r['Barkod']).join('\n')+'\n');
+$('#cx').onclick=()=>{
+ const n=CK.items.length,f=CK.items.filter(x=>x.ok).length,wb=XLSX.utils.book_new();
+ const s0=XLSX.utils.aoa_to_sheet([['Raf kontrol raporu',new Date().toLocaleDateString('tr-TR')],['Liste',CK.name],['Toplam',n],['Bulunan',f],['Bulunamayan',n-f]]);s0['!cols']=[{wch:22},{wch:40}];XLSX.utils.book_append_sheet(wb,s0,'Özet');
+ for(const[ok,nm]of[[true,'Bulunanlar'],[false,'Bulunamayanlar']]){const rows=ckR(ok);const R2=rows.length?rows:[{'Not':'Kayıt yok'}],ks=Object.keys(R2[0]),ws=XLSX.utils.json_to_sheet(R2);
+  ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...R2.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));XLSX.utils.book_append_sheet(wb,ws,nm)}
+ if((CK.extra||[]).length){const w=XLSX.utils.json_to_sheet(CK.extra.map(e=>({'Barkod':e.b,'Okunma zamanı':new Date(e.t).toLocaleString('tr-TR')})));w['!cols']=[{wch:16},{wch:22}];XLSX.utils.book_append_sheet(wb,w,'Listede olmayanlar')}
+ sv('raf-kontrol-raporu-'+new Date().toISOString().slice(0,10)+'.xlsx',XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+};
 const SG={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'};
 let NG=[];
 const shown=()=>{$('#nt').value=NG[+$('#ns').value].l.join('\n')};
@@ -263,7 +388,7 @@ $('#xp').addEventListener('click',async()=>{
  finally{b.disabled=false;b.textContent=t0}
 });
 $('#xt').addEventListener('click',async()=>{
- const rows=R.L[cur].length?R.L[cur]:[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
+ const rows=R.L[cur].length?prep(R.L[cur],cur):[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
  const slug={kayip:'kayip-adayi',odunc:'odundeki-kitaplar',iade:'iade-islenmemis',yok:'kohada-yok',dus:'dusumlu-kitap-disi',raf:'raf-bulunamadi',bul:'bulundu'}[cur];
  const ws=XLSX.utils.json_to_sheet(rows);
  ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
@@ -279,7 +404,7 @@ $('#xl').addEventListener('click',async()=>{
  o.push(['Gecikmiş ödünç',R.gec]);if(!R.hasLoan)o.push([],['Not','Ödünç raporu yüklenmedi, kayıp adayı listesi ödünçtekileri de içerir.']);
  const s0=XLSX.utils.aoa_to_sheet(o);s0['!cols']=[{wch:42},{wch:14}];XLSX.utils.book_append_sheet(wb,s0,'Özet');
  const nm={kayip:'Kayıp adayı',odunc:'Ödünçte',iade:'İade işlenmemiş',yok:'Kohada yok',dus:'Düşüm-kitap dışı',raf:'Raf bulunamadı',bul:'Bulundu'};
- for(const key of Object.keys(nm)){const rows=L[key].length?L[key]:[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
+ for(const key of Object.keys(nm)){const rows=L[key].length?prep(L[key],key):[{'Not':'Kayıt yok'}],ks=Object.keys(rows[0]);
   const ws=XLSX.utils.json_to_sheet(rows);
   ws['!cols']=ks.map(c=>({wch:Math.min(48,Math.max(c.length,...rows.slice(0,300).map(r=>String(r[c]==null?'':r[c]).length))+2)}));
   XLSX.utils.book_append_sheet(wb,ws,nm[key])}
